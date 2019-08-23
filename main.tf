@@ -4,13 +4,13 @@ module "label" {
   stage      = var.stage
   name       = var.name
   delimiter  = var.delimiter
-  attributes = [compact(concat(var.attributes, list("cluster")))]
+  attributes = compact(concat(var.attributes, ["cluster"]))
   tags       = var.tags
   enabled    = var.enabled
 }
 
 data "aws_iam_policy_document" "assume_role" {
-  count = var.enabled == "true" ? 1 : 0
+  count = var.enabled ? 1 : 0
 
   statement {
     effect  = "Allow"
@@ -32,17 +32,17 @@ resource "aws_iam_role" "default" {
 resource "aws_iam_role_policy_attachment" "amazon_eks_cluster_policy" {
   count      = var.enabled == "true" ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.default.name
+  role       = aws_iam_role.default[0].name
 }
 
 resource "aws_iam_role_policy_attachment" "amazon_eks_service_policy" {
-  count      = var.enabled == "true" ? 1 : 0
+  count      = var.enabled ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
   role       = join("", aws_iam_role.default.*.name)
 }
 
 resource "aws_security_group" "default" {
-  count       = var.enabled == "true" ? 1 : 0
+  count       = var.enabled ? 1 : 0
   name        = module.label.id
   description = "Security Group for EKS cluster"
   vpc_id      = var.vpc_id
@@ -50,7 +50,7 @@ resource "aws_security_group" "default" {
 }
 
 resource "aws_security_group_rule" "egress" {
-  count             = var.enabled == "true" ? 1 : 0
+  count             = var.enabled ? 1 : 0
   description       = "Allow all egress traffic"
   from_port         = 0
   to_port           = 0
@@ -61,7 +61,7 @@ resource "aws_security_group_rule" "egress" {
 }
 
 resource "aws_security_group_rule" "ingress_workers" {
-  count                    = var.enabled == "true" ? var.workers_security_group_count : 0
+  count                    = var.enabled ? var.workers_security_group_count : 0
   description              = "Allow the cluster to receive communication from the worker nodes"
   from_port                = 0
   to_port                  = 65535
@@ -72,7 +72,7 @@ resource "aws_security_group_rule" "ingress_workers" {
 }
 
 resource "aws_security_group_rule" "ingress_security_groups" {
-  count                    = var.enabled == "true" ? length(var.allowed_security_groups) : 0
+  count                    = var.enabled ? length(var.allowed_security_groups) : 0
   description              = "Allow inbound traffic from existing Security Groups"
   from_port                = 0
   to_port                  = 65535
@@ -83,7 +83,7 @@ resource "aws_security_group_rule" "ingress_security_groups" {
 }
 
 resource "aws_security_group_rule" "ingress_cidr_blocks" {
-  count             = var.enabled == "true" && length(var.allowed_cidr_blocks) > 0 ? 1 : 0
+  count             = var.enabled && length(var.allowed_cidr_blocks) > 0 ? 1 : 0
   description       = "Allow inbound traffic from CIDR blocks"
   from_port         = 0
   to_port           = 65535
@@ -94,7 +94,7 @@ resource "aws_security_group_rule" "ingress_cidr_blocks" {
 }
 
 resource "aws_eks_cluster" "default" {
-  count                     = var.enabled == "true" ? 1 : 0
+  count                     = var.enabled ? 1 : 0
   name                      = module.label.id
   role_arn                  = join("", aws_iam_role.default.*.arn)
   version                   = var.kubernetes_version
