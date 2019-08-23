@@ -98,7 +98,7 @@ resource "aws_eks_cluster" "default" {
   name                      = module.label.id
   role_arn                  = join("", aws_iam_role.default.*.arn)
   version                   = var.kubernetes_version
-  enabled_cluster_log_types = [var.enabled_cluster_log_types]
+  enabled_cluster_log_types = var.enabled_cluster_log_types
 
   vpc_config {
     security_group_ids      = [join("", aws_security_group.default.*.id)]
