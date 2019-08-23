@@ -88,7 +88,7 @@ resource "aws_security_group_rule" "ingress_cidr_blocks" {
   from_port         = 0
   to_port           = 65535
   protocol          = "-1"
-  cidr_blocks       = [var.allowed_cidr_blocks]
+  cidr_blocks       = var.allowed_cidr_blocks
   security_group_id = join("", aws_security_group.default.*.id)
   type              = "ingress"
 }
